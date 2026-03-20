@@ -5,23 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Cloud Stratego</title>
   </head>
-  
-  <body class="bg-gray-900 text-white h-screen w-screen flex flex-col items-center justify-center overflow-hidden">
-    
-    <div class="mb-4 text-center">
-        <h1 class="text-3xl font-bold mb-2">Stratego</h1>
-        <p id="status-text" class="text-red-400 font-bold text-lg">Spieler Rot ist dran</p>
+  <body class="bg-gray-900 text-white min-h-screen w-screen flex items-center justify-center p-3">
+    <div id="app-root" class="w-full max-w-6xl">
+      <section id="mode-screen" class="bg-gray-800 border border-gray-700 rounded-xl p-6 shadow-xl text-center space-y-4">
+        <h1 class="text-3xl font-bold">Stratego</h1>
+        <p class="text-gray-300">Wähle einen Spielmodus</p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          <button id="mode-normal-btn" class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-500 transition font-semibold">Normal</button>
+          <button id="mode-custom-btn" disabled class="px-4 py-2 rounded-md bg-gray-700 text-gray-400 cursor-not-allowed">Custom (coming soon)</button>
+          <button id="mode-chaos-btn" disabled class="px-4 py-2 rounded-md bg-gray-700 text-gray-400 cursor-not-allowed">Chaos (coming soon)</button>
+        </div>
+      </section>
+
+      <section id="connection-screen" class="hidden bg-gray-800 border border-gray-700 rounded-xl p-6 shadow-xl text-center space-y-4">
+        <h2 class="text-2xl font-bold">Lobby</h2>
+        <p class="text-gray-300">P2P via WebRTC (PeerJS) folgt. Für jetzt lokaler Testmodus.</p>
+        <button id="start-local-match-btn" class="px-4 py-2 rounded-md bg-green-600 hover:bg-green-500 transition font-semibold">Lokales Match starten</button>
+      </section>
+
+      <section id="game-screen" class="hidden space-y-3">
+        <div class="text-center">
+          <h2 class="text-2xl font-bold">Stratego - Normal</h2>
+          <p id="status-text" class="text-red-400 font-bold text-base mt-1"></p>
+        </div>
+
+        <div id="enemy-hud" class="bg-gray-800 border-2 border-gray-600 grid gap-0 shadow-2xl mx-auto"></div>
+
+        <div class="flex justify-center items-start gap-4">
+          <div id="game-board" class="bg-gray-800 border-2 border-gray-600 grid gap-0 shadow-2xl"></div>
+          <aside id="legend" class="bg-gray-800 border border-gray-600 rounded-lg p-3 w-48 text-xs leading-5">
+            <h3 class="font-bold mb-2 text-sm">Legende</h3>
+            <div id="legend-content" class="space-y-1"></div>
+          </aside>
+        </div>
+
+        <div id="player-hud" class="bg-gray-800 border-2 border-gray-600 grid gap-0 shadow-2xl mx-auto"></div>
+
+        <div class="text-center">
+          <button id="confirm-setup-btn" class="px-4 py-2 rounded-md bg-blue-700 text-white font-semibold disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed" disabled>
+            Aufstellung bestätigen
+          </button>
+        </div>
+      </section>
     </div>
-
-    <div id="enemy-hud" class="bg-gray-800 border-2 border-gray-600 grid gap-0 shadow-2xl mx-auto my-1">
-        </div>
-
-    <div id="game-board" class="bg-gray-800 border-2 border-gray-600 grid gap-0 shadow-2xl mx-auto my-1">
-        </div>
-
-    <div id="player-hud" class="bg-gray-800 border-2 border-gray-600 grid gap-0 shadow-2xl mx-auto my-1">
-        </div>
-
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

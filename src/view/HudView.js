@@ -1,42 +1,34 @@
 export class HudView {
-    constructor(playerPieces, cellSize = 56) {
+    constructor(cellSize = 56) {
         this.playerHudContainer = document.getElementById('player-hud');
         this.enemyHudContainer = document.getElementById('enemy-hud');
-        this.sortedIndexArray = [];
         this.cellSize = cellSize;
-
-        this.sortedIndexArray = this.createSortedIndexArray(this.createHudMap(playerPieces));
+        this.rankOrder = [10, 9, 3, 2, 1, 11, 0];
     }
 
-    createHudMap(pieces) {
-        let hudMap = new Map();
-        pieces.filter(piece => !piece.alive)
-              .map(piece => {
-                if (!hudMap.has(piece.rank)) {
-                    hudMap.set(piece.rank, 1);
-                    return;
-                }
-                hudMap.set(piece.rank, hudMap.get(piece.rank) + 1);
-              });
-        return hudMap;
-    }
-
-    createSortedIndexArray(hudMap) {
-        let indexArray = [];
-        hudMap.forEach((value, key) => {
-            indexArray.push(key);
+    countByRank(pieces, predicate) {
+        const map = new Map();
+        pieces.filter(predicate).forEach(piece => {
+            map.set(piece.rank, (map.get(piece.rank) || 0) + 1);
         });
-        indexArray.sort((a, b) => b - a);
-        return indexArray;
+        return map;
     }
 
-    render(playerPieces, enemyPieces) {
-        const playerHudMap = this.createHudMap(playerPieces);
-        const enemyHudMap = this.createHudMap(enemyPieces);
-        const allRanks = new Set([...playerHudMap.keys(), ...enemyHudMap.keys()]);
-        this.sortedIndexArray = [...allRanks].sort((a, b) => b - a);
+    getPieceTypeByRank(pieces, rank) {
+        const found = pieces.find(piece => piece.rank === rank);
+        return found ? found.type : `Rang ${rank}`;
+    }
 
-        const columnCount = Math.max(1, this.sortedIndexArray.length);
+    render({
+        playerPieces,
+        enemyPieces,
+        gameState,
+        selectedSetupRank,
+    }) {
+        const isSetup = gameState === 'setup';
+        const playerCountMap = this.countByRank(playerPieces, piece => !piece.alive);
+        const enemyCountMap = this.countByRank(enemyPieces, piece => !piece.alive);
+        const columnCount = this.rankOrder.length;
 
         this.playerHudContainer.innerHTML = '';
         this.playerHudContainer.style.gridTemplateRows = `repeat(1, minmax(0, 1fr))`;
@@ -50,26 +42,50 @@ export class HudView {
         this.enemyHudContainer.style.width = `${columnCount * this.cellSize}px`;
         this.enemyHudContainer.style.height = `${this.cellSize}px`;
 
-        this.sortedIndexArray.forEach((rank, index) => {
-            const playerCount = playerHudMap.get(rank) || 0;
-            const enemyCount = enemyHudMap.get(rank) || 0;
+        this.rankOrder.forEach((rank) => {
+            const playerType = this.getPieceTypeByRank(playerPieces, rank);
+            const enemyType = this.getPieceTypeByRank(enemyPieces, rank);
+            const playerCount = playerCountMap.get(rank) || 0;
+            const enemyCount = enemyCountMap.get(rank) || 0;
 
-            const playerType = playerPieces.find(piece => piece.rank === rank)?.type;
-            const enemyType = enemyPieces.find(piece => piece.rank === rank)?.type;
-
-            this.playerHudContainer.appendChild(this.createCell(index, playerType, playerCount));
-            this.enemyHudContainer.appendChild(this.createCell(index, enemyType, enemyCount));
+            this.playerHudContainer.appendChild(
+                this.createCell({
+                    type: playerType,
+                    rank,
+                    count: playerCount,
+                    selectable: isSetup,
+                    selected: selectedSetupRank === rank,
+                }),
+            );
+            this.enemyHudContainer.appendChild(
+                this.createCell({
+                    type: enemyType,
+                    rank,
+                    count: enemyCount,
+                    selectable: false,
+                    selected: false,
+                }),
+            );
         });
     }
 
-    createCell(col, type, count) {
+    createCell({ type, rank, count, selectable, selected }) {
         const cell = document.createElement('div');
-        cell.className = 'w-full h-full border border-gray-700 flex items-center justify-center cursor-pointer';
-        
-        cell.dataset.col = col;
+        cell.className = 'w-full h-full border border-gray-700 flex flex-col items-center justify-center px-1 text-[10px] leading-tight';
+
+        if (selectable) {
+            cell.classList.add('cursor-pointer', 'hover:bg-gray-700');
+            cell.dataset.rank = String(rank);
+        } else {
+            cell.classList.add('cursor-default');
+        }
+        if (selected) {
+            cell.classList.add('ring-2', 'ring-yellow-400', 'bg-gray-700');
+        }
+
         cell.dataset.type = type;
         cell.dataset.count = count;
-        cell.textContent = `Typ: ${type}, Anzahl: ${count}`;
+        cell.innerHTML = `<span class="font-semibold">${type}</span><span>x${count}</span>`;
 
         return cell;
     }
