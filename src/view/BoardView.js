@@ -1,12 +1,16 @@
-export class View {
-    constructor() {
+export class BoardView {
+    constructor(cellSize = 56) {
         this.boardContainer = document.getElementById('game-board');
+        this.cellSize = cellSize;
     }
 
     render(board) {
         this.boardContainer.innerHTML = '';
+
         this.boardContainer.style.gridTemplateRows = `repeat(${board.rows}, minmax(0, 1fr))`;
         this.boardContainer.style.gridTemplateColumns = `repeat(${board.columns}, minmax(0, 1fr))`;
+        this.boardContainer.style.width = `${board.columns * this.cellSize}px`;
+        this.boardContainer.style.height = `${board.rows * this.cellSize}px`;
 
         for (let row = 0; row < board.rows; row++) {
             for (let col = 0; col < board.columns; col++) {
@@ -24,7 +28,7 @@ export class View {
         cell.dataset.row = row;
         cell.dataset.col = col;
 
-        if (piece) {
+        if (piece && piece.alive) {
             const pieceElement = this.createPiece(piece);
             cell.appendChild(pieceElement);
         }

@@ -6,6 +6,9 @@ export class Board {
         this.columns = columns;
         this.waterCoords = waterCoords;
         this.grid = Array.from({ length: rows }, () => Array(columns).fill(null));
+        waterCoords.forEach(([row, col], index) => {
+            this.setPiece(row, col, new Piece(`water-${index}`, 'Water', -1, 'neutral'));
+        });
     }
 
     isValidPosition(row, col) {
@@ -30,6 +33,7 @@ export class Board {
         }
 
         const pieceToMove = this.getPiece(fromRow, fromCol);
+        if (!pieceToMove.alive) {return false;}
         
         if (!pieceToMove) {
             console.error("Auf dem Startfeld steht keine Figur!");
@@ -48,18 +52,14 @@ export class Board {
         return true;
     }
 
-    initializePieces() {
-        // Die neutralen Seen in der Mitte platzieren
-        this.waterCoords.forEach(([row, col], index) => {
-            this.setPiece(row, col, new Piece(`water-${index}`, 'Water', -1, 'neutral'));
-        });
+    initializePieces(pieces = []) {
+        pieces.forEach((piece, index) => {
+            const row = Math.floor(index / this.columns);
+            const col = index % this.columns;
 
-        // Test-Figuren für den Anfang (Spieler Rot)
-        this.setPiece(0, 0, new Piece('red-flag', 'Flag', 0, 'red'));
-        this.setPiece(1, 1, new Piece('red-miner-1', 'Miner', 3, 'red'));
-        
-        // Test-Figuren für den Anfang (Spieler Blau)
-        this.setPiece(this.rows - 1, this.columns - 1, new Piece('blue-spy', 'Spy', 1, 'blue'));
-        this.setPiece(this.rows - 2, this.columns - 2, new Piece('blue-marshal', 'Marshal', 8, 'blue'));
+            if (row < this.rows) {
+                this.setPiece(row, col, piece);
+            }
+        });
     }
 }

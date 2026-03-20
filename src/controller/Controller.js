@@ -4,12 +4,16 @@ export class Controller {
         this.view = view;
         
         this.selectedCell = null;   // Merkt sich die Koordinaten {row, col} der angetippten Figur
+        this.GAME_STATES = {
+            SETUP: 'setup',
+            PLAY: 'play',
+            END: 'end',
+        };
+
         this.currentPlayer = 'red'; // Rot fängt an
     }
 
     init() {
-        this.board.initializePieces();
-
         this.view.render(this.board);
         this.updateStatusText();
 
