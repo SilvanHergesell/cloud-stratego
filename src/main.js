@@ -9,7 +9,7 @@ import { MESSAGE_TYPES } from './network/protocol.js';
 
 const BOARD_ROWS = 8;
 const BOARD_COLUMNS = 8;
-const GRID_CELL_SIZE = 56;
+const MAX_CELL_SIZE = 56;
 const WATER_COORDS = [
     [3, 2],
     [4, 2],
@@ -35,6 +35,8 @@ const TEST_ENEMY_FORMATION = [
 let peerClient = null;
 let localRole = null; // host | guest
 let gameController = null;
+let activeBoardView = null;
+let activeHudView = null;
 const pendingMessages = [];
 let isDisconnecting = false;
 let rematchLocalReady = false;
@@ -46,6 +48,24 @@ function showScreen(screenId) {
         if (!el) return;
         el.classList.toggle('hidden', id !== screenId);
     });
+}
+
+function getResponsiveCellSize() {
+    const viewportWidth = Math.max(320, Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth));
+    const horizontalPadding = 32; // body + container safety
+    const boardAvailableWidth = Math.max(240, viewportWidth - horizontalPadding);
+    const computed = Math.floor(boardAvailableWidth / BOARD_COLUMNS);
+    return Math.max(28, Math.min(MAX_CELL_SIZE, computed));
+}
+
+function applyResponsiveSizing() {
+    if (!activeBoardView || !activeHudView) return;
+    const cellSize = getResponsiveCellSize();
+    activeBoardView.setCellSize(cellSize);
+    activeHudView.setCellSize(cellSize);
+    if (gameController) {
+        gameController.render();
+    }
 }
 
 function renderLegend() {
@@ -241,9 +261,11 @@ function startOnlineGame() {
     const localPieces = localOwner === 'blue' ? bluePieces : redPieces;
     const enemyPieces = localOwner === 'blue' ? redPieces : bluePieces;
 
-    const boardView = new BoardView(GRID_CELL_SIZE);
+    const boardView = new BoardView(getResponsiveCellSize());
     boardView.setPerspective(localOwner);
-    const hudView = new HudView(GRID_CELL_SIZE);
+    const hudView = new HudView(getResponsiveCellSize());
+    activeBoardView = boardView;
+    activeHudView = hudView;
 
     gameController = new Controller({
         board,
@@ -261,6 +283,7 @@ function startOnlineGame() {
         },
     });
     gameController.init();
+    applyResponsiveSizing();
     showRematchButton();
     renderLegend();
     while (pendingMessages.length > 0) {
@@ -277,9 +300,11 @@ function startTestingGame() {
     const enemyFormationPieces = buildEnemyPiecesForTesting(enemyPieces);
     board.placeEnemyFormation(enemyFormationPieces, TEST_ENEMY_FORMATION);
 
-    const boardView = new BoardView(GRID_CELL_SIZE);
+    const boardView = new BoardView(getResponsiveCellSize());
     boardView.setPerspective(localOwner);
-    const hudView = new HudView(GRID_CELL_SIZE);
+    const hudView = new HudView(getResponsiveCellSize());
+    activeBoardView = boardView;
+    activeHudView = hudView;
     const localPeerStub = {
         send: () => true,
         isConnected: () => false,
@@ -306,6 +331,7 @@ function startTestingGame() {
         },
     });
     gameController.init();
+    applyResponsiveSizing();
     renderLegend();
     showRematchButton();
 }
@@ -398,4 +424,8 @@ window.addEventListener('beforeunload', () => {
     if (peerClient) {
         peerClient.destroy();
     }
+});
+
+window.addEventListener('resize', () => {
+    applyResponsiveSizing();
 });

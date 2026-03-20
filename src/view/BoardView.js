@@ -5,6 +5,10 @@ export class BoardView {
         this.perspective = 'blue';
     }
 
+    setCellSize(cellSize) {
+        this.cellSize = cellSize;
+    }
+
     setPerspective(owner) {
         this.perspective = owner;
     }

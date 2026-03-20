@@ -6,6 +6,10 @@ export class HudView {
         this.rankOrder = [10, 9, 3, 2, 1, 11, 0];
     }
 
+    setCellSize(cellSize) {
+        this.cellSize = cellSize;
+    }
+
     countByRank(pieces, predicate) {
         const map = new Map();
         pieces.filter(predicate).forEach(piece => {
