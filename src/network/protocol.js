@@ -10,6 +10,7 @@ export const MESSAGE_TYPES = {
     REMATCH_START: 'rematchStart',
     REMATCH_MODE_SELECT_OPEN: 'rematchModeSelectOpen',
     MODE_SELECTED: 'modeSelected',
+    CUSTOM_NAMES_SUBMITTED: 'customNamesSubmitted',
     ERROR: 'error',
 };
 

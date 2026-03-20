@@ -28,6 +28,7 @@ export class HudView {
         enemyPieces,
         gameState,
         selectedSetupRank,
+        mode = 'normal',
     }) {
         const isSetup = gameState === 'setup';
         const playerCountMap = this.countByRank(playerPieces, piece => !piece.alive);
@@ -49,12 +50,14 @@ export class HudView {
         this.rankOrder.forEach((rank) => {
             const playerType = this.getPieceTypeByRank(playerPieces, rank);
             const enemyType = this.getPieceTypeByRank(enemyPieces, rank);
+            const playerDisplayType = this.getDisplayTypeByRank(playerPieces, rank, playerType);
+            const enemyDisplayType = this.getDisplayTypeByRank(enemyPieces, rank, enemyType);
             const playerCount = playerCountMap.get(rank) || 0;
             const enemyCount = enemyCountMap.get(rank) || 0;
 
             this.playerHudContainer.appendChild(
                 this.createCell({
-                    type: playerType,
+                    type: mode === 'custom' ? playerDisplayType : playerType,
                     rank,
                     count: playerCount,
                     selectable: isSetup,
@@ -63,7 +66,7 @@ export class HudView {
             );
             this.enemyHudContainer.appendChild(
                 this.createCell({
-                    type: enemyType,
+                    type: mode === 'custom' ? enemyDisplayType : enemyType,
                     rank,
                     count: enemyCount,
                     selectable: false,
@@ -71,6 +74,11 @@ export class HudView {
                 }),
             );
         });
+    }
+
+    getDisplayTypeByRank(pieces, rank, fallback) {
+        const found = pieces.find(piece => piece.rank === rank);
+        return found ? (found.displayType || found.type) : fallback;
     }
 
     createCell({ type, rank, count, selectable, selected }) {

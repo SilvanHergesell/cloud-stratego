@@ -23,7 +23,7 @@ export class BoardView {
         };
     }
 
-    render(board, selectedCell = null, validMoves = [], gameState = 'setup', revealedPieceIds = new Set()) {
+    render(board, selectedCell = null, validMoves = [], gameState = 'setup', revealedPieceIds = new Set(), mode = 'normal') {
         this.boardContainer.innerHTML = '';
 
         this.boardContainer.style.gridTemplateRows = `repeat(${board.rows}, minmax(0, 1fr))`;
@@ -45,13 +45,13 @@ export class BoardView {
                 const isWater = board.isWaterPosition(row, col);
                 const isSelected = selectedKey === `${row},${col}`;
                 const isValidMove = validMoveKeySet.has(`${row},${col}`);
-                const cellElement = this.createCell(row, col, piece, isSelected, isValidMove, gameState, revealedPieceIds, isWater);
+                const cellElement = this.createCell(row, col, piece, isSelected, isValidMove, gameState, revealedPieceIds, isWater, mode);
                 this.boardContainer.appendChild(cellElement);
             }
         }
     }
 
-    createCell(row, col, piece, isSelected, isValidMove, gameState, revealedPieceIds, isWater) {
+    createCell(row, col, piece, isSelected, isValidMove, gameState, revealedPieceIds, isWater, mode) {
         const cell = document.createElement('div');
         cell.className = 'w-full h-full border border-gray-700 flex items-center justify-center cursor-pointer bg-gray-800';
         
@@ -72,28 +72,29 @@ export class BoardView {
             !(gameState === 'setup' && piece.owner !== this.perspective);
 
         if (shouldRenderPiece) {
-            const pieceElement = this.createPiece(piece, gameState, revealedPieceIds, isSelected);
+            const pieceElement = this.createPiece(piece, gameState, revealedPieceIds, isSelected, mode);
             cell.appendChild(pieceElement);
         }
 
         return cell;
     }
 
-    createPiece(piece, gameState, revealedPieceIds, isSelected) {
+    createPiece(piece, gameState, revealedPieceIds, isSelected, mode) {
         const pieceElement = document.createElement('div');
         
         pieceElement.className = 'w-11/12 h-11/12 rounded-sm flex items-center justify-center text-[10px] md:text-xs font-semibold shadow-md select-none px-1 text-center leading-tight';
         const isEnemyPiece = piece.owner !== this.perspective;
         const isRevealed = revealedPieceIds.has(piece.id);
-        const shouldHide = isEnemyPiece && !isRevealed;
+        const shouldHide = mode !== 'custom' && isEnemyPiece && !isRevealed;
+        const label = piece.displayType || piece.type;
 
         if (piece.owner === 'red') {
             pieceElement.classList.add('bg-red-600', 'text-white');
-            pieceElement.textContent = shouldHide ? '?' : piece.type;
+            pieceElement.textContent = shouldHide ? '?' : label;
             
         } else if (piece.owner === 'blue') {
             pieceElement.classList.add('bg-blue-600', 'text-white');
-            pieceElement.textContent = shouldHide ? '?' : piece.type;
+            pieceElement.textContent = shouldHide ? '?' : label;
         }
 
         if (isSelected) {

@@ -11,6 +11,7 @@ export class Controller {
         isHost,
         peerClient,
         testingMode = false,
+        mode = 'normal',
         onGameOver,
     }) {
         this.board = board;
@@ -23,6 +24,7 @@ export class Controller {
         this.isHost = isHost;
         this.peerClient = peerClient;
         this.testingMode = testingMode;
+        this.mode = mode;
         this.onGameOver = onGameOver;
 
         this.pieceById = new Map([...localPieces, ...enemyPieces].map(piece => [piece.id, piece]));
@@ -164,12 +166,14 @@ export class Controller {
             this.validMoves,
             this.gameState,
             this.getVisibleRevealedIds(),
+            this.mode,
         );
         this.hudView.render({
             playerPieces: this.localPieces,
             enemyPieces: this.enemyPieces,
             gameState: this.gameState,
             selectedSetupRank: this.selectedSetupRank,
+            mode: this.mode,
         });
     }
 
@@ -446,6 +450,16 @@ export class Controller {
     clearExternalStatusMessage() {
         this.externalStatusMessage = null;
         this.updateStatusText();
+    }
+
+    applyCustomNames(owner, namesById) {
+        this.pieceById.forEach((piece) => {
+            if (piece.owner !== owner) return;
+            if (namesById[piece.id]) {
+                piece.displayType = namesById[piece.id];
+            }
+        });
+        this.render();
     }
 
     updateStatusText(winner = null) {
