@@ -41,6 +41,7 @@ const pendingMessages = [];
 let isDisconnecting = false;
 let rematchLocalReady = false;
 let rematchRemoteReady = false;
+let selectedMode = 'normal';
 
 function showScreen(screenId) {
     ['mode-screen', 'connection-screen', 'game-screen'].forEach(id => {
@@ -48,6 +49,34 @@ function showScreen(screenId) {
         if (!el) return;
         el.classList.toggle('hidden', id !== screenId);
     });
+}
+
+function setModeSelectionState() {
+    const modeStatusEl = document.getElementById('mode-status-text');
+    const normalBtn = document.getElementById('mode-normal-btn');
+    const testingBtn = document.getElementById('mode-testing-btn');
+    const isConnected = Boolean(peerClient && peerClient.isConnected());
+    const isHost = localRole === 'host';
+
+    if (!modeStatusEl || !normalBtn || !testingBtn) return;
+
+    if (!isConnected) {
+        modeStatusEl.textContent = 'Wähle einen Spielmodus';
+        normalBtn.disabled = false;
+        testingBtn.disabled = false;
+        testingBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        return;
+    }
+
+    testingBtn.disabled = true;
+    testingBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    if (isHost) {
+        modeStatusEl.textContent = 'Verbindung aktiv: Wähle den Modus für den Neustart.';
+        normalBtn.disabled = false;
+    } else {
+        modeStatusEl.textContent = 'Verbindung aktiv: Host wählt den Modus.';
+        normalBtn.disabled = true;
+    }
 }
 
 function getResponsiveCellSize() {
@@ -193,10 +222,23 @@ function disconnectSession(reason = 'Verbindung getrennt') {
 
     localRole = null;
     showScreen('connection-screen');
+    setModeSelectionState();
     resetSessionUi();
     resetRematchState();
     setConnectionStatus(`Status: ${reason}`, 'text-red-300');
     isDisconnecting = false;
+}
+
+function transitionToConnectedModeSelect() {
+    if (gameController) {
+        gameController.destroy();
+        gameController = null;
+    }
+    activeBoardView = null;
+    activeHudView = null;
+    resetRematchState();
+    showScreen('mode-screen');
+    setModeSelectionState();
 }
 
 function createPeerClient() {
@@ -211,6 +253,7 @@ function createPeerClient() {
         onConnectionOpen: (remotePeerId) => {
             setConnectionStatus(`Status: Verbunden mit ${remotePeerId}`, 'text-green-300');
             enableStartButton(true);
+            setModeSelectionState();
             if (peerClient) {
                 peerClient.send(MESSAGE_TYPES.HELLO, {
                     role: localRole,
@@ -224,14 +267,24 @@ function createPeerClient() {
         onMessage: (message) => {
             if (message.type === MESSAGE_TYPES.REMATCH_REQUEST) {
                 rematchRemoteReady = true;
+                if (gameController) {
+                    gameController.setExternalStatusMessage('Gegner hat Neustart angefragt.', 'text-yellow-300 font-semibold');
+                }
                 if (localRole === 'host' && rematchLocalReady) {
-                    peerClient?.send(MESSAGE_TYPES.REMATCH_START, {});
-                    startOnlineGame();
+                    peerClient?.send(MESSAGE_TYPES.REMATCH_MODE_SELECT_OPEN, {});
+                    transitionToConnectedModeSelect();
                 }
                 return;
             }
-            if (message.type === MESSAGE_TYPES.REMATCH_START) {
-                startOnlineGame();
+            if (message.type === MESSAGE_TYPES.REMATCH_MODE_SELECT_OPEN) {
+                transitionToConnectedModeSelect();
+                return;
+            }
+            if (message.type === MESSAGE_TYPES.MODE_SELECTED) {
+                if (message.payload?.mode === 'normal') {
+                    showScreen('game-screen');
+                    startOnlineGame('normal');
+                }
                 return;
             }
             if (!gameController) {
@@ -246,8 +299,9 @@ function createPeerClient() {
     });
 }
 
-function startOnlineGame() {
+function startOnlineGame(mode = 'normal') {
     if (!peerClient || !peerClient.isConnected()) return;
+    selectedMode = mode;
     if (gameController) {
         gameController.destroy();
         gameController = null;
@@ -283,6 +337,7 @@ function startOnlineGame() {
         },
     });
     gameController.init();
+    gameController.clearExternalStatusMessage();
     applyResponsiveSizing();
     showRematchButton();
     renderLegend();
@@ -389,11 +444,12 @@ function initConnectionScreen() {
 
         rematchLocalReady = true;
         updateRematchButtonWaiting();
+        gameController.setExternalStatusMessage('Neustart angefragt. Warte auf Gegner...', 'text-yellow-300 font-semibold');
         peerClient.send(MESSAGE_TYPES.REMATCH_REQUEST, {});
 
         if (localRole === 'host' && rematchRemoteReady) {
-            peerClient.send(MESSAGE_TYPES.REMATCH_START, {});
-            startOnlineGame();
+            peerClient.send(MESSAGE_TYPES.REMATCH_MODE_SELECT_OPEN, {});
+            transitionToConnectedModeSelect();
         }
     });
 }
@@ -402,7 +458,17 @@ function initModeSelection() {
     const normalBtn = document.getElementById('mode-normal-btn');
     const testingBtn = document.getElementById('mode-testing-btn');
     normalBtn?.addEventListener('click', () => {
-        showScreen('connection-screen');
+        const isConnected = Boolean(peerClient && peerClient.isConnected());
+        if (!isConnected) {
+            showScreen('connection-screen');
+            return;
+        }
+        if (localRole !== 'host') return;
+
+        selectedMode = 'normal';
+        peerClient.send(MESSAGE_TYPES.MODE_SELECTED, { mode: selectedMode });
+        showScreen('game-screen');
+        startOnlineGame(selectedMode);
     });
     testingBtn?.addEventListener('click', () => {
         localRole = null;
@@ -419,6 +485,7 @@ showScreen('mode-screen');
 initModeSelection();
 initConnectionScreen();
 initLegendToggle();
+setModeSelectionState();
 
 window.addEventListener('beforeunload', () => {
     if (peerClient) {

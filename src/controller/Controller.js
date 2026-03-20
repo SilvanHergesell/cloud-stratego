@@ -38,6 +38,8 @@ export class Controller {
         this.endgameRevealedIds = new Set();
         this.revealTimeoutId = null;
         this.lastCombatMessage = null;
+        this.externalStatusMessage = null;
+        this.externalStatusClassName = 'text-yellow-300 font-semibold';
         this.setupSubmitted = false;
         this.remoteSetupConfirmed = false;
         this.remoteSetupReceived = false;
@@ -435,9 +437,26 @@ export class Controller {
         this.validMoves = [];
     }
 
+    setExternalStatusMessage(message, className = 'text-yellow-300 font-semibold') {
+        this.externalStatusMessage = message;
+        this.externalStatusClassName = className;
+        this.updateStatusText();
+    }
+
+    clearExternalStatusMessage() {
+        this.externalStatusMessage = null;
+        this.updateStatusText();
+    }
+
     updateStatusText(winner = null) {
         const statusEl = document.getElementById('status-text');
         if (!statusEl) return;
+
+        if (this.externalStatusMessage && this.gameState !== this.GAME_STATES.END) {
+            statusEl.textContent = this.externalStatusMessage;
+            statusEl.className = this.externalStatusClassName;
+            return;
+        }
 
         if (this.gameState === this.GAME_STATES.SETUP) {
             if (this.setupSubmitted) {

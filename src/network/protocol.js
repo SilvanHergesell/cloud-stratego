@@ -8,6 +8,8 @@ export const MESSAGE_TYPES = {
     REVEAL_REQUEST: 'revealRequest',
     REMATCH_REQUEST: 'rematchRequest',
     REMATCH_START: 'rematchStart',
+    REMATCH_MODE_SELECT_OPEN: 'rematchModeSelectOpen',
+    MODE_SELECTED: 'modeSelected',
     ERROR: 'error',
 };
 
