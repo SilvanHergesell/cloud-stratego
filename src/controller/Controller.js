@@ -10,6 +10,7 @@ export class Controller {
         localOwner,
         isHost,
         peerClient,
+        testingMode = false,
         onGameOver,
     }) {
         this.board = board;
@@ -21,6 +22,7 @@ export class Controller {
         this.enemyOwner = localOwner === 'blue' ? 'red' : 'blue';
         this.isHost = isHost;
         this.peerClient = peerClient;
+        this.testingMode = testingMode;
         this.onGameOver = onGameOver;
 
         this.pieceById = new Map([...localPieces, ...enemyPieces].map(piece => [piece.id, piece]));
@@ -56,6 +58,7 @@ export class Controller {
     }
 
     handleNetworkMessage(message) {
+        if (this.testingMode) return;
         switch (message.type) {
             case MESSAGE_TYPES.SETUP_CONFIRMED:
                 this.handleRemoteSetupConfirmed(message.payload);
@@ -120,6 +123,18 @@ export class Controller {
         this.boundConfirmClickHandler = () => {
             if (this.gameState !== this.GAME_STATES.SETUP || this.setupSubmitted) return;
             if (!this.allLocalPiecesPlaced()) return;
+
+            if (this.testingMode) {
+                this.setupSubmitted = true;
+                this.gameState = this.GAME_STATES.PLAY;
+                this.selectedSetupRank = null;
+                this.currentPlayer = 'blue';
+                this.updateConfirmButtonState();
+                this.updateTurnState();
+                this.render();
+                this.updateStatusText();
+                return;
+            }
 
             this.setupSubmitted = true;
             const positions = this.serializeSetupPositions(this.localPieces);
@@ -426,7 +441,9 @@ export class Controller {
 
         if (this.gameState === this.GAME_STATES.SETUP) {
             if (this.setupSubmitted) {
-                statusEl.textContent = 'Aufstellung gesendet. Warte auf den Gegner...';
+                statusEl.textContent = this.testingMode
+                    ? 'Testing: Aufstellung bestätigt.'
+                    : 'Aufstellung gesendet. Warte auf den Gegner...';
                 statusEl.className = 'text-yellow-300 font-semibold';
                 return;
             }

@@ -26,6 +26,11 @@ const NORMAL_PIECE_POOL = [
     { type: 'Bombe', rank: 11, count: 2 },
     { type: 'Flagge', rank: 0, count: 1 },
 ];
+const TEST_ENEMY_FORMATION = [
+    { row: 0, col: 0, rank: 11 }, { row: 0, col: 1, rank: 10 }, { row: 0, col: 2, rank: 2 }, { row: 0, col: 3, rank: 9 },
+    { row: 0, col: 4, rank: 3 }, { row: 0, col: 5, rank: 2 }, { row: 0, col: 6, rank: 3 }, { row: 0, col: 7, rank: 0 },
+    { row: 1, col: 0, rank: 1 }, { row: 1, col: 1, rank: 11 },
+];
 
 let peerClient = null;
 let localRole = null; // host | guest
@@ -83,6 +88,22 @@ function createAllPieces() {
     const bluePieces = createPiecesForOwner('blue', 0);
     const redPieces = createPiecesForOwner('red', bluePieces.length);
     return { bluePieces, redPieces };
+}
+
+function buildEnemyPiecesForTesting(allEnemyPieces) {
+    const poolByRank = new Map();
+    allEnemyPieces.forEach(piece => {
+        if (!poolByRank.has(piece.rank)) {
+            poolByRank.set(piece.rank, []);
+        }
+        poolByRank.get(piece.rank).push(piece);
+    });
+
+    return TEST_ENEMY_FORMATION.map((entry) => {
+        const list = poolByRank.get(entry.rank) || [];
+        const piece = list.shift();
+        return piece || null;
+    }).filter(Boolean);
 }
 
 function setConnectionStatus(text, className = 'text-yellow-300') {
@@ -247,6 +268,48 @@ function startOnlineGame() {
     }
 }
 
+function startTestingGame() {
+    const board = new Board(BOARD_ROWS, BOARD_COLUMNS, WATER_COORDS);
+    const { bluePieces, redPieces } = createAllPieces();
+    const localOwner = 'blue';
+    const localPieces = bluePieces;
+    const enemyPieces = redPieces;
+    const enemyFormationPieces = buildEnemyPiecesForTesting(enemyPieces);
+    board.placeEnemyFormation(enemyFormationPieces, TEST_ENEMY_FORMATION);
+
+    const boardView = new BoardView(GRID_CELL_SIZE);
+    boardView.setPerspective(localOwner);
+    const hudView = new HudView(GRID_CELL_SIZE);
+    const localPeerStub = {
+        send: () => true,
+        isConnected: () => false,
+    };
+
+    if (gameController) {
+        gameController.destroy();
+        gameController = null;
+    }
+
+    gameController = new Controller({
+        board,
+        boardView,
+        hudView,
+        localPieces,
+        enemyPieces,
+        localOwner,
+        isHost: true,
+        peerClient: localPeerStub,
+        testingMode: true,
+        onGameOver: () => {
+            const confirmBtn = document.getElementById('confirm-setup-btn');
+            if (confirmBtn) confirmBtn.disabled = true;
+        },
+    });
+    gameController.init();
+    renderLegend();
+    showRematchButton();
+}
+
 function initConnectionScreen() {
     const createBtn = document.getElementById('create-session-btn');
     const joinBtn = document.getElementById('join-session-btn');
@@ -311,8 +374,18 @@ function initConnectionScreen() {
 
 function initModeSelection() {
     const normalBtn = document.getElementById('mode-normal-btn');
+    const testingBtn = document.getElementById('mode-testing-btn');
     normalBtn?.addEventListener('click', () => {
         showScreen('connection-screen');
+    });
+    testingBtn?.addEventListener('click', () => {
+        localRole = null;
+        if (peerClient) {
+            peerClient.destroy();
+            peerClient = null;
+        }
+        showScreen('game-screen');
+        startTestingGame();
     });
 }
 
