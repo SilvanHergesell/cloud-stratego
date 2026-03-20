@@ -26,6 +26,10 @@ export class BoardView {
         this.boardContainer.style.gridTemplateColumns = `repeat(${board.columns}, minmax(0, 1fr))`;
         this.boardContainer.style.width = `${board.columns * this.cellSize}px`;
         this.boardContainer.style.height = `${board.rows * this.cellSize}px`;
+        this.boardContainer.style.minWidth = `${board.columns * this.cellSize}px`;
+        this.boardContainer.style.minHeight = `${board.rows * this.cellSize}px`;
+        this.boardContainer.style.aspectRatio = '1 / 1';
+        this.boardContainer.style.flexShrink = '0';
 
         const validMoveKeySet = new Set(validMoves.map(move => `${move.row},${move.col}`));
         const selectedKey = selectedCell ? `${selectedCell.row},${selectedCell.col}` : null;

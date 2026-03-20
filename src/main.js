@@ -51,6 +51,22 @@ function renderLegend() {
         .join('');
 }
 
+function initLegendToggle() {
+    const legend = document.getElementById('legend');
+    const showLegendBtn = document.getElementById('show-legend-btn');
+    if (!legend || !showLegendBtn) return;
+
+    legend.addEventListener('click', () => {
+        legend.classList.add('hidden');
+        showLegendBtn.classList.remove('hidden');
+    });
+
+    showLegendBtn.addEventListener('click', () => {
+        legend.classList.remove('hidden');
+        showLegendBtn.classList.add('hidden');
+    });
+}
+
 function createPiecesForOwner(owner, startId) {
     const pieces = [];
     let idCounter = startId;
@@ -303,6 +319,7 @@ function initModeSelection() {
 showScreen('mode-screen');
 initModeSelection();
 initConnectionScreen();
+initLegendToggle();
 
 window.addEventListener('beforeunload', () => {
     if (peerClient) {

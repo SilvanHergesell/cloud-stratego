@@ -11,7 +11,7 @@
         <h1 class="text-3xl font-bold">Stratego</h1>
         <p class="text-gray-300">Wähle einen Spielmodus</p>
         <div class="flex flex-col sm:flex-row gap-3 justify-center">
-          <button id="mode-normal-btn" class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-500 transition font-semibold">Normal</button>
+          <button id="mode-normal-btn" class="px-4 py-2 rounded-md bg-yellow-400 hover:bg-yellow-300 text-gray-900 transition font-semibold">Normal</button>
           <button id="mode-custom-btn" disabled class="px-4 py-2 rounded-md bg-gray-700 text-gray-400 cursor-not-allowed">Custom (coming soon)</button>
           <button id="mode-chaos-btn" disabled class="px-4 py-2 rounded-md bg-gray-700 text-gray-400 cursor-not-allowed">Chaos (coming soon)</button>
         </div>
@@ -55,15 +55,21 @@
 
         <div id="enemy-hud" class="bg-gray-800 border-2 border-gray-600 grid gap-0 shadow-2xl mx-auto"></div>
 
-        <div class="flex justify-center items-start gap-4">
-          <div id="game-board" class="bg-gray-800 border-2 border-gray-600 grid gap-0 shadow-2xl"></div>
-          <aside id="legend" class="bg-gray-800 border border-gray-600 rounded-lg p-3 w-48 text-xs leading-5">
-            <h3 class="font-bold mb-2 text-sm">Legende</h3>
-            <div id="legend-content" class="space-y-1"></div>
-          </aside>
+        <div class="flex flex-col justify-center items-center gap-3">
+          <div id="game-board" class="bg-gray-800 border-2 border-gray-600 grid gap-0 shadow-2xl shrink-0"></div>
         </div>
 
         <div id="player-hud" class="bg-gray-800 border-2 border-gray-600 grid gap-0 shadow-2xl mx-auto"></div>
+
+        <aside id="legend" class="mx-auto bg-gray-800 border border-gray-600 rounded-lg p-3 w-full max-w-sm text-xs leading-5 cursor-pointer select-none">
+          <h3 class="font-bold mb-2 text-sm">Legende (tippen zum Ausblenden)</h3>
+          <div id="legend-content" class="space-y-1"></div>
+        </aside>
+        <div class="text-center">
+          <button id="show-legend-btn" class="hidden px-3 py-1 rounded-md bg-gray-700 hover:bg-gray-600 text-sm font-semibold">
+            Legende anzeigen
+          </button>
+        </div>
 
         <div class="text-center">
           <button id="confirm-setup-btn" class="px-4 py-2 rounded-md bg-blue-700 text-white font-semibold disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed" disabled>
