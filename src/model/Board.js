@@ -16,6 +16,18 @@ export class Board {
         return this.grid[row][col];
     }
 
+    getPieceById(pieceId) {
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.columns; col++) {
+                const piece = this.grid[row][col];
+                if (piece && piece.id === pieceId) {
+                    return piece;
+                }
+            }
+        }
+        return null;
+    }
+
     isWaterPosition(row, col) {
         return this.waterKeySet.has(`${row},${col}`);
     }
@@ -33,7 +45,7 @@ export class Board {
     }
 
     isSetupRowForPlayer(row, owner) {
-        if (owner === 'red') {
+        if (owner === 'blue') {
             return row >= this.rows - 4 && row < this.rows;
         }
         return row >= 0 && row < 4;
@@ -226,6 +238,75 @@ export class Board {
             gameOver: false,
             bothRemoved: true,
         };
+    }
+
+    setPieceAliveById(pieceId, alive) {
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.columns; col++) {
+                const piece = this.grid[row][col];
+                if (piece && piece.id === pieceId) {
+                    piece.alive = alive;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    applySetupPositions(pieceById, positions) {
+        positions.forEach(({ pieceId, row, col }) => {
+            const piece = pieceById.get(pieceId);
+            if (!piece) return;
+            if (!this.isValidPosition(row, col) || this.isWaterPosition(row, col)) return;
+            this.setPiece(row, col, piece);
+            piece.alive = true;
+        });
+    }
+
+    clearOwnerPieces(owner) {
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.columns; col++) {
+                const piece = this.grid[row][col];
+                if (piece && piece.owner === owner) {
+                    this.grid[row][col] = null;
+                }
+            }
+        }
+    }
+
+    applyResolvedTurn(resolvedTurn, pieceById) {
+        const movingPiece = pieceById.get(resolvedTurn.pieceId);
+        if (!movingPiece) return;
+
+        const { from, to, action, combatOutcome } = resolvedTurn;
+        if (action === 'move') {
+            this.clearPosition(from.row, from.col);
+            this.setPiece(to.row, to.col, movingPiece);
+            movingPiece.alive = true;
+            return;
+        }
+
+        const defenderPiece = pieceById.get(resolvedTurn.defenderId);
+        if (combatOutcome === 'attackerWins') {
+            if (defenderPiece) defenderPiece.alive = false;
+            this.clearPosition(from.row, from.col);
+            this.setPiece(to.row, to.col, movingPiece);
+            movingPiece.alive = true;
+            return;
+        }
+
+        if (combatOutcome === 'defenderWins') {
+            movingPiece.alive = false;
+            this.clearPosition(from.row, from.col);
+            return;
+        }
+
+        if (combatOutcome === 'bothDie') {
+            movingPiece.alive = false;
+            if (defenderPiece) defenderPiece.alive = false;
+            this.clearPosition(from.row, from.col);
+            this.clearPosition(to.row, to.col);
+        }
     }
 
     placeEnemyFormation(enemyPieces, formation) {

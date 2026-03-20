@@ -2,7 +2,7 @@ export class BoardView {
     constructor(cellSize = 56) {
         this.boardContainer = document.getElementById('game-board');
         this.cellSize = cellSize;
-        this.perspective = 'red';
+        this.perspective = 'blue';
     }
 
     setPerspective(owner) {
@@ -10,7 +10,7 @@ export class BoardView {
     }
 
     toModelCoords(displayRow, displayCol, board) {
-        if (this.perspective === 'red') {
+        if (this.perspective === 'blue') {
             return { row: displayRow, col: displayCol };
         }
         return {
@@ -19,7 +19,7 @@ export class BoardView {
         };
     }
 
-    render(board, selectedCell = null, validMoves = [], gameState = 'setup', temporarilyRevealedIds = new Set()) {
+    render(board, selectedCell = null, validMoves = [], gameState = 'setup', revealedPieceIds = new Set()) {
         this.boardContainer.innerHTML = '';
 
         this.boardContainer.style.gridTemplateRows = `repeat(${board.rows}, minmax(0, 1fr))`;
@@ -37,13 +37,13 @@ export class BoardView {
                 const isWater = board.isWaterPosition(row, col);
                 const isSelected = selectedKey === `${row},${col}`;
                 const isValidMove = validMoveKeySet.has(`${row},${col}`);
-                const cellElement = this.createCell(row, col, piece, isSelected, isValidMove, gameState, temporarilyRevealedIds, isWater);
+                const cellElement = this.createCell(row, col, piece, isSelected, isValidMove, gameState, revealedPieceIds, isWater);
                 this.boardContainer.appendChild(cellElement);
             }
         }
     }
 
-    createCell(row, col, piece, isSelected, isValidMove, gameState, temporarilyRevealedIds, isWater) {
+    createCell(row, col, piece, isSelected, isValidMove, gameState, revealedPieceIds, isWater) {
         const cell = document.createElement('div');
         cell.className = 'w-full h-full border border-gray-700 flex items-center justify-center cursor-pointer bg-gray-800';
         
@@ -58,21 +58,26 @@ export class BoardView {
             cell.classList.add('bg-green-900');
         }
 
-        if (!isWater && piece && piece.alive) {
-            const pieceElement = this.createPiece(piece, gameState, temporarilyRevealedIds, isSelected);
+        const shouldRenderPiece = !isWater &&
+            piece &&
+            piece.alive &&
+            !(gameState === 'setup' && piece.owner !== this.perspective);
+
+        if (shouldRenderPiece) {
+            const pieceElement = this.createPiece(piece, gameState, revealedPieceIds, isSelected);
             cell.appendChild(pieceElement);
         }
 
         return cell;
     }
 
-    createPiece(piece, gameState, temporarilyRevealedIds, isSelected) {
+    createPiece(piece, gameState, revealedPieceIds, isSelected) {
         const pieceElement = document.createElement('div');
         
         pieceElement.className = 'w-11/12 h-11/12 rounded-sm flex items-center justify-center text-[10px] md:text-xs font-semibold shadow-md select-none px-1 text-center leading-tight';
         const isEnemyPiece = piece.owner !== this.perspective;
-        const isTemporarilyRevealed = temporarilyRevealedIds.has(piece.id);
-        const shouldHide = isEnemyPiece && !isTemporarilyRevealed;
+        const isRevealed = revealedPieceIds.has(piece.id);
+        const shouldHide = isEnemyPiece && !isRevealed;
 
         if (piece.owner === 'red') {
             pieceElement.classList.add('bg-red-600', 'text-white');
